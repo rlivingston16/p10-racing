@@ -73,9 +73,10 @@
   .pick-item span:last-child { color: #e8002d; font-weight: 700; }
 
   /* Pot tracker */
-  .pot-tracker { margin-top: 16px; padding: 16px; background: #15151e; border-radius: 2px; border: 1px solid #38383f; }
-  .pot-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; border-bottom: 1px solid #2a2a3a; }
+  .pot-tracker { margin-top: 16px; padding: 0; background: #1e1e2e; border-radius: 4px; border-left: 4px solid #e8002d; overflow: hidden; }
+  .pot-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff; }
   .pot-row:last-child { border-bottom: none; }
+  .pot-row span:first-child { font-weight: 600; }
   .pot-row span:last-child { font-weight: 700; color: #e8002d; }
 </style>
 </head>
@@ -227,7 +228,12 @@ async function loadLeaderboard() {
     html += '<div class="pot-tracker" style="margin-top:16px">';
     potRows.forEach(row => {
       if (!row || !row[0]) return;
-      html += `<div class="pot-row"><span>${row[0]}</span><span style="color:#e8002d;font-weight:700">${row[1]||''}</span></div>`;
+      const isHeader = !row[1] || row[1] === '';
+      if (isHeader) {
+        html += `<div style="background:#38383f;padding:10px 16px;font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fff">${row[0]}</div>`;
+      } else {
+        html += `<div class="pot-row"><span>${row[0]}</span><span>${row[1]}</span></div>`;
+      }
     });
     html += '</div>';
   }
