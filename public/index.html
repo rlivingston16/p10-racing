@@ -232,7 +232,7 @@ async function loadLeaderboard() {
       if (isHeader) {
         html += `<tr><td colspan="2" style="text-align:center;font-size:0.75rem;font-weight:700;letter-spacing:2px;background:#2a2a3a;padding:10px">${row[0]}</td></tr>`;
       } else {
-        html += `<tr><td style="text-align:left">${row[0]}</td><td>${row[1]}</td></tr>`;
+        html += `<tr><td style="text-align:left;text-transform:none;font-weight:400">${row[0]}</td><td style="text-transform:none">${row[1]}</td></tr>`;
       }
     });
     html += '</table></div>';
