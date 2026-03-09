@@ -7,6 +7,17 @@ const path = require('path');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const APP_CODE = process.env.APP_CODE || '2026';
+
+// Auth check middleware for API routes
+function requireCode(req, res, next) {
+  const code = req.headers['x-app-code'];
+  if (code !== APP_CODE) return res.status(401).json({ error: 'unauthorized' });
+  next();
+}
+
+app.use('/api', requireCode);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const SPREADSHEET_ID = '1T__0CvsUq5Asq0-raVzxiXXvadfctATZwS7ANA-GQXo';

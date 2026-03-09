@@ -101,7 +101,14 @@
   </div>
   <div class="header-stripe"></div>
 </header>
-<nav>
+<div id="lockScreen" style="display:none;position:fixed;inset:0;background:#15151e;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px">
+  <div style="font-size:1.5rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#fff">P10 Racing 2026</div>
+  <div style="font-size:0.75rem;color:#767676;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Enter Access Code</div>
+  <input id="codeInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••" style="width:140px;padding:16px;text-align:center;font-size:1.5rem;letter-spacing:8px;background:#1e1e2e;border:1px solid #38383f;border-radius:4px;color:#fff;font-family:inherit;outline:none" onkeydown="if(event.key==='Enter')checkCode()">
+  <button onclick="checkCode()" style="width:140px;padding:14px;background:#e8002d;border:none;border-radius:2px;color:#fff;font-family:inherit;font-size:0.9rem;font-weight:900;letter-spacing:3px;text-transform:uppercase;cursor:pointer">ENTER</button>
+  <div id="codeError" style="color:#e8002d;font-size:0.8rem;display:none">Incorrect code</div>
+</div>
+<nav style="display:none">
   <button class="active" onclick="showView('picks')">Picks</button>
   <button onclick="showView('leaderboard')">Standings</button>
   <button onclick="showView('scores')">Scores</button>
@@ -152,10 +159,49 @@
 
 <script>
 let raceData = null;
+let APP_CODE = '';
+
+function checkCode() {
+  const input = document.getElementById('codeInput').value;
+  fetch('/api/races', { headers: { 'x-app-code': input } })
+    .then(r => {
+      if (r.ok) {
+        APP_CODE = input;
+        sessionStorage.setItem('p10code', input);
+        document.getElementById('lockScreen').style.display = 'none';
+        document.querySelector('nav').style.display = 'flex';
+        document.getElementById('picks').classList.add('active');
+        init();
+      } else {
+        document.getElementById('codeError').style.display = 'block';
+        document.getElementById('codeInput').value = '';
+      }
+    });
+}
+
+function apiFetch(url, opts = {}) {
+  opts.headers = Object.assign({}, opts.headers, { 'x-app-code': APP_CODE });
+  return fetch(url, opts);
+}
+
 let currentRound = 1;
 
+window.onload = function() {
+  const saved = sessionStorage.getItem('p10code');
+  if (saved) {
+    APP_CODE = saved;
+    document.getElementById('lockScreen').style.display = 'none';
+    document.querySelector('nav').style.display = 'flex';
+    document.getElementById('picks').classList.add('active');
+    init();
+  } else {
+    document.getElementById('lockScreen').style.display = 'flex';
+    document.querySelector('nav').style.display = 'none';
+  }
+};
+
 async function init() {
-  const r = await fetch('/api/races');
+  const r = await apiFetch('/api/races');
   raceData = await r.json();
   currentRound = raceData.nextRound;
 
@@ -212,7 +258,7 @@ async function submitPicks() {
   if (!p10 || !p2 || !dnf) { msg.innerHTML = '<div class="msg error">Fill in all picks</div>'; return; }
 
   msg.innerHTML = '<div class="msg">Submitting...</div>';
-  const r = await fetch('/api/picks', {
+  const r = await apiFetch('/api/picks', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ playerName: player, round: currentRound, p10, p2, dnf })
@@ -228,7 +274,7 @@ async function submitPicks() {
 
 async function loadLeaderboard() {
   const el = document.getElementById('leaderboardContent');
-  const [leaderRes, potRes] = await Promise.all([fetch('/api/leaderboard'), fetch('/api/pot')]);
+  const [leaderRes, potRes] = await Promise.all([apiFetch('/api/leaderboard'), apiFetch('/api/pot')]);
   const rows = await leaderRes.json();
   const potRows = await potRes.json();
   const playerRows = rows.slice(1).filter(r => r[0] && !isNaN(r[0]));
@@ -256,7 +302,7 @@ async function loadLeaderboard() {
 
 async function loadScores() {
   const el = document.getElementById('scoresContent');
-  const r = await fetch('/api/scores');
+  const r = await apiFetch('/api/scores');
   const rows = await r.json();
   if (!rows.length) { el.innerHTML = 'No data'; return; }
 
@@ -303,7 +349,7 @@ async function loadScores() {
 
 async function loadResults() {
   const el = document.getElementById('resultsContent');
-  const r = await fetch('/api/results');
+  const r = await apiFetch('/api/results');
   const rows = await r.json();
   if (!rows.length) { el.innerHTML = 'No data'; return; }
 
