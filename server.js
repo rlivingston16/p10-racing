@@ -54,7 +54,7 @@ app.get('/api/leaderboard', async (req, res) => {
     const sheets = getSheets();
     const r = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Leaderboard!A3:D35',
+      range: 'Leaderboard!A3:D25',
       valueRenderOption: 'FORMATTED_VALUE'
     });
     res.json(r.data.values || []);
