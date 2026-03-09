@@ -294,7 +294,7 @@ async function loadResults() {
   let html = '';
   rows.slice(1).forEach(row => {
     if (!row[4]) return; // no P1 = no result
-    html += `<div class="card" style="margin-bottom:12px;"><h2>R${row[0]} — ${row[1]}</h2><div class="table-wrap"><table>`;
+    html += `<div class="card" style="margin-bottom:12px;border-left:none;"><h2>R${row[0]} — ${row[1]}</h2><div class="table-wrap"><table>`;
     html += '<tr><th>Pos</th><th>Driver</th></tr>';
     for (let i = 4; i <= 25; i++) {
       if (row[i]) html += `<tr><td>P${i-3}</td><td>${row[i]}</td></tr>`;
