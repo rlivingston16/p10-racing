@@ -225,17 +225,17 @@ async function loadLeaderboard() {
   });
   html += '</table></div>';
   if (potRows && potRows.length) {
-    html += '<div class="pot-tracker" style="margin-top:16px">';
+    html += '<div class="table-wrap" style="margin-top:16px"><table>';
     potRows.forEach(row => {
       if (!row || !row[0]) return;
       const isHeader = !row[1] || row[1] === '';
       if (isHeader) {
-        html += `<div style="background:#38383f;padding:10px 16px;font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fff">${row[0]}</div>`;
+        html += `<tr><td colspan="2" style="text-align:center;font-size:0.75rem;font-weight:700;letter-spacing:2px;background:#2a2a3a;padding:10px">${row[0]}</td></tr>`;
       } else {
-        html += `<div class="pot-row"><span>${row[0]}</span><span>${row[1]}</span></div>`;
+        html += `<tr><td style="text-align:left">${row[0]}</td><td>${row[1]}</td></tr>`;
       }
     });
-    html += '</div>';
+    html += '</table></div>';
   }
   el.innerHTML = html;
 }
