@@ -109,7 +109,7 @@ app.get('/api/pot', async (req, res) => {
     const sheets = getSheets();
     const r = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Leaderboard!B28:C35',
+      range: 'Leaderboard!B27:C35',
       valueRenderOption: 'FORMATTED_VALUE'
     });
     res.json(r.data.values || []);
