@@ -80,12 +80,17 @@
   .pot-row span:last-child { font-weight: 700; color: #e8002d; }
 
   /* Mobile */
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     .view { padding: 10px; }
-    .card { padding: 14px 12px; }
-    td, th { padding: 8px 6px; font-size: 0.8rem; }
+    .card { padding: 14px 0; }
+    .card h2 { padding: 0 14px 14px; }
+    td, th { padding: 10px 8px; font-size: 0.85rem; }
     .hide-mobile { display: none; }
     nav button { font-size: 0.7rem; padding: 12px 4px; letter-spacing: 0; }
+    select, button.submit, .race-badge, label, .current-picks, .pick-item, #pickMsg { margin-left: 14px; margin-right: 14px; width: calc(100% - 28px); box-sizing: border-box; }
+    button.submit { width: calc(100% - 28px); }
+    .race-badge { display: inline-block; width: auto; }
+    .results-race-header { padding: 0 14px; }
   }
 </style>
 </head>
@@ -306,7 +311,7 @@ async function loadResults() {
   let html = '';
   rows.slice(1).forEach(row => {
     if (!row[4]) return; // no P1 = no result
-    html += `<div class="card" style="margin-bottom:12px;border-left:none;"><h2>R${row[0]} — ${row[1]}</h2><div class="table-wrap"><table>`;
+    html += `<div class="card" style="margin-bottom:12px;border-left:none;"><h2 class="results-race-header">R${row[0]} — ${row[1]}</h2><div class="table-wrap"><table>`;
     html += '<tr><th>Pos</th><th>Driver</th></tr>';
     for (let i = 4; i <= 25; i++) {
       if (row[i]) html += `<tr><td>P${i-3}</td><td style="text-transform:none">${row[i]}</td></tr>`;
