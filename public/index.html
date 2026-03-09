@@ -226,14 +226,7 @@ async function loadLeaderboard() {
     html += `<tr class="${cls}"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td></tr>`;
   });
   
-  // Pot tracker
-  const potRows = rows.slice(25);
   html += '</table></div>';
-  if (potRows.length) {
-    html += '<div style="margin-top:16px;padding:12px;background:#0f3460;border-radius:8px;">';
-    potRows.forEach(row => { if(row[1]) html += `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.85rem;"><span>${row[1]}</span><span>${row[2]||''}</span></div>`; });
-    html += '</div>';
-  }
   el.innerHTML = html;
 }
 
