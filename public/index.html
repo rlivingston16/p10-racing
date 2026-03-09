@@ -235,7 +235,7 @@ async function loadLeaderboard() {
   let html = '<div class="table-wrap"><table><tr><th>Rank</th><th>Player</th><th>Pts</th><th>Payout</th></tr>';
   playerRows.forEach((row, i) => {
     const cls = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
-    html += `<tr class="${cls}"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td class="hide-mobile">${row[3]||''}</td></tr>`;
+    html += `<tr class="${cls}"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td></tr>`;
   });
   html += '</table></div>';
   if (potRows && potRows.length) {
