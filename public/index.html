@@ -232,7 +232,7 @@ async function loadCurrentPicks() {
   const player = document.getElementById('playerSelect').value;
   if (!player) return;
   const playerIndex = raceData.players.indexOf(player);
-  const r = await fetch(`/api/picks/${currentRound}`);
+  const r = await apiFetch(`/api/picks/${currentRound}`);
   const picks = await r.json();
   const row = picks[playerIndex] || [];
   const p10 = row[1] || '', p2 = row[2] || '', dnf = row[3] || '';
