@@ -12,10 +12,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 const SPREADSHEET_ID = '1T__0CvsUq5Asq0-raVzxiXXvadfctATZwS7ANA-GQXo';
 
 function getAuth() {
-  const creds = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'client_secret_809278874397-lkut5se9tnv4j4n9ku7sjpu6nmuhsn4p.apps.googleusercontent.com.json')));
+  let creds, token;
+  if (process.env.GOOGLE_CREDS) {
+    creds = JSON.parse(process.env.GOOGLE_CREDS);
+    token = JSON.parse(process.env.GOOGLE_TOKEN);
+  } else {
+    creds = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'client_secret_809278874397-lkut5se9tnv4j4n9ku7sjpu6nmuhsn4p.apps.googleusercontent.com.json')));
+    token = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'token.json')));
+  }
   const { client_id, client_secret, redirect_uris } = creds.installed;
   const auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
-  auth.setCredentials(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'token.json'))));
+  auth.setCredentials(token);
   return auth;
 }
 
