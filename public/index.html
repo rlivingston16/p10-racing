@@ -213,27 +213,24 @@ async function submitPicks() {
 
 async function loadLeaderboard() {
   const el = document.getElementById('leaderboardContent');
-  const r = await fetch('/api/leaderboard');
-  const rows = await r.json();
-  
+  const [leaderRes, potRes] = await Promise.all([fetch('/api/leaderboard'), fetch('/api/pot')]);
+  const rows = await leaderRes.json();
+  const potRows = await potRes.json();
   const playerRows = rows.slice(1).filter(r => r[0] && !isNaN(r[0]));
-  const potRows = rows.slice(1).filter(r => r[1] && isNaN(r[0]));
-
   let html = '<div class="table-wrap"><table><tr><th>Rank</th><th>Player</th><th>Pts</th><th>Payout</th></tr>';
   playerRows.forEach((row, i) => {
     const cls = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
     html += `<tr class="${cls}"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td></tr>`;
   });
   html += '</table></div>';
-
-  if (potRows.length) {
-    html += '<div class="pot-tracker">';
+  if (potRows && potRows.length) {
+    html += '<div class="pot-tracker" style="margin-top:16px">';
     potRows.forEach(row => {
-      if (row[1]) html += `<div class="pot-row"><span>${row[1]}</span><span>${row[2]||''}</span></div>`;
+      if (!row || !row[0]) return;
+      html += `<div class="pot-row"><span>${row[0]}</span><span style="color:#e8002d;font-weight:700">${row[1]||''}</span></div>`;
     });
     html += '</div>';
   }
-
   el.innerHTML = html;
 }
 
