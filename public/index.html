@@ -78,6 +78,15 @@
   .pot-row:last-child { border-bottom: none; }
   .pot-row span:first-child { font-weight: 600; }
   .pot-row span:last-child { font-weight: 700; color: #e8002d; }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .view { padding: 10px; }
+    .card { padding: 14px 12px; }
+    td, th { padding: 8px 6px; font-size: 0.8rem; }
+    .hide-mobile { display: none; }
+    nav button { font-size: 0.7rem; padding: 12px 4px; letter-spacing: 0; }
+  }
 </style>
 </head>
 <body>
@@ -221,7 +230,7 @@ async function loadLeaderboard() {
   let html = '<div class="table-wrap"><table><tr><th>Rank</th><th>Player</th><th>Pts</th><th>Payout</th></tr>';
   playerRows.forEach((row, i) => {
     const cls = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
-    html += `<tr class="${cls}"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td>${row[3]||''}</td></tr>`;
+    html += `<tr class="${cls}"><td>${row[0]||''}</td><td>${row[1]||''}</td><td>${row[2]||''}</td><td class="hide-mobile">${row[3]||''}</td></tr>`;
   });
   html += '</table></div>';
   if (potRows && potRows.length) {
@@ -266,7 +275,7 @@ async function loadScores() {
   // Header row
   html += '<tr><th style="text-align:left">Driver</th>';
   completedRounds.forEach(r => {
-    html += `<th>${r.name}</th><th>Bonus</th><th>Win</th>`;
+    html += `<th>${r.name}</th><th class="hide-mobile">Bonus</th><th class="hide-mobile">Win</th>`;
   });
   html += '</tr>';
 
@@ -278,7 +287,7 @@ async function loadScores() {
       const p10 = row[r.colStart] || '';
       const bonus = row[r.colStart + 1] || '';
       const win = row[r.colStart + 2] || '';
-      html += `<td>${p10 === '0' ? '' : p10}</td><td>${bonus === '0' ? '' : bonus}</td><td>${win === '$10' ? '<span class="badge">$10</span>' : ''}</td>`;
+      html += `<td>${p10 === '0' ? '' : p10}</td><td class="hide-mobile">${bonus === '0' ? '' : bonus}</td><td class="hide-mobile">${win === '$10' ? '<span class="badge">$10</span>' : ''}</td>`;
     });
     html += '</tr>';
   });
