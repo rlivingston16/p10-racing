@@ -54,7 +54,7 @@ app.get('/api/leaderboard', async (req, res) => {
     const sheets = getSheets();
     const r = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Leaderboard!A3:D35',
+      range: 'Leaderboard!A3:D25',
       valueRenderOption: 'FORMATTED_VALUE'
     });
     res.json(r.data.values || []);
@@ -97,6 +97,19 @@ app.get('/api/picks/:round', async (req, res) => {
     const r = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `Picks!A${startRow}:D${endRow}`,
+      valueRenderOption: 'FORMATTED_VALUE'
+    });
+    res.json(r.data.values || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/pot
+app.get('/api/pot', async (req, res) => {
+  try {
+    const sheets = getSheets();
+    const r = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Leaderboard!B28:C35',
       valueRenderOption: 'FORMATTED_VALUE'
     });
     res.json(r.data.values || []);
