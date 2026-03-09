@@ -47,7 +47,7 @@
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   th { background: #38383f; padding: 10px 8px; text-align: center; white-space: nowrap; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #aaa; }
   th:first-child { text-align: left; }
-  td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; text-align: center; color: #fff; }
+  td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; text-align: center; color: #fff; text-transform: none; }
   tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
 
   .rank-1 td:first-child { color: #ffd700; font-weight: 700; }
@@ -297,7 +297,7 @@ async function loadResults() {
     html += `<div class="card" style="margin-bottom:12px;border-left:none;"><h2>R${row[0]} — ${row[1]}</h2><div class="table-wrap"><table>`;
     html += '<tr><th>Pos</th><th>Driver</th></tr>';
     for (let i = 4; i <= 25; i++) {
-      if (row[i]) html += `<tr><td>P${i-3}</td><td>${row[i]}</td></tr>`;
+      if (row[i]) html += `<tr><td>P${i-3}</td><td style="text-transform:none">${row[i]}</td></tr>`;
     }
     if (row[26]) html += `<tr><td>DNF</td><td>${row[26]}</td></tr>`;
     html += '</table></div></div>';
