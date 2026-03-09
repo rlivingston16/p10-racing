@@ -230,6 +230,11 @@ async function init() {
 
 async function loadCurrentPicks() {
   const player = document.getElementById('playerSelect').value;
+  // Clear picks on player change
+  document.getElementById('p10Select').value = '';
+  document.getElementById('p2Select').value = '';
+  document.getElementById('dnfSelect').value = '';
+  document.getElementById('currentPicks').innerHTML = '';
   if (!player) return;
   const playerIndex = raceData.players.indexOf(player);
   const r = await apiFetch(`/api/picks/${currentRound}`);
