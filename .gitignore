@@ -1,1 +1,18 @@
 node_modules/
+
+# Credentials — never commit
+credentials/
+client_secret_*.json
+token.json
+gmail_token.json
+.env
+.env.local
+
+# Local-only email scripts (contain Gmail App Password; use Gmail MCP on remote machines instead)
+send_picks_reminder.js
+qualifying_check.js
+sent_flags/
+
+# Logs
+*.log
+npm-debug.log*
