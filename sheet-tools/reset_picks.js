@@ -127,11 +127,11 @@ async function main() {
     const dataEnd   = dataStart + 22;
     dropReqs.push({ setDataValidation: {
       range: { sheetId: newPicksId, startRowIndex: dataStart, endRowIndex: dataEnd, startColumnIndex: 1, endColumnIndex: 3 },
-      rule: { condition: { type: 'ONE_OF_LIST', values: DRIVERS_2026.map(d => ({ userEnteredValue: d })) }, showCustomUi: true, strict: false }
+      rule: { condition: { type: 'ONE_OF_LIST', values: DRIVERS_2026.map(d => ({ userEnteredValue: d })) }, showCustomUi: true, strict: true }
     }});
     dropReqs.push({ setDataValidation: {
       range: { sheetId: newPicksId, startRowIndex: dataStart, endRowIndex: dataEnd, startColumnIndex: 3, endColumnIndex: 4 },
-      rule: { condition: { type: 'ONE_OF_LIST', values: ['NO DNF', ...DRIVERS_2026].map(d => ({ userEnteredValue: d })) }, showCustomUi: true, strict: false }
+      rule: { condition: { type: 'ONE_OF_LIST', values: ['NO DNF', ...DRIVERS_2026].map(d => ({ userEnteredValue: d })) }, showCustomUi: true, strict: true }
     }});
   }
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SID, requestBody: { requests: dropReqs } });
