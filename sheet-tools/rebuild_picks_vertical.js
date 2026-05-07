@@ -202,7 +202,7 @@ async function main() {
             values: DRIVERS_2026.map(d => ({ userEnteredValue: d }))
           },
           showCustomUi: true,
-          strict: false  // allow typing partial names
+          strict: true  // reject free text — typed names like "Stroll" silently break MATCH-based scoring
         }
       }
     });
@@ -217,7 +217,7 @@ async function main() {
             values: ['NO DNF', ...DRIVERS_2026].map(d => ({ userEnteredValue: d }))
           },
           showCustomUi: true,
-          strict: false
+          strict: true
         }
       }
     });
@@ -269,8 +269,8 @@ async function main() {
 
       const resRowNum = r + 2; // Results tab row (row 2 = race 1)
       const resP2  = `Results!F${resRowNum}`;  // P2 = col F (index 5)
-      const resP10Range = `Results!E${resRowNum}:X${resRowNum}`; // P1-P20 = E:X
-      const resDNF = `Results!Y${resRowNum}`;
+      const resP10Range = `Results!E${resRowNum}:Z${resRowNum}`; // P1-P22 = E:Z
+      const resDNF = `Results!AA${resRowNum}`; // First DNF moved to AA after P-cols expanded to 22
 
       // P10 score
       const p10Score = `=IFERROR(IF(${p10Pick}="","",IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)),"")`;
