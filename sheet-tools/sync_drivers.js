@@ -72,28 +72,42 @@ async function main() {
   const driverValues = drivers.map(d => ({ userEnteredValue: d }));
   const dnfValues = [{ userEnteredValue: 'NO DNF' }, ...driverValues];
 
-  // Update dropdowns for all 24 race blocks
+  // Auto-detect race count from Picks tab structure.
+  // Race header rows start with "Round " (e.g. "Round 6 — Miami — Race Day: 5/3").
+  // build_p10.js scaffolds 24, mid-season the sheet may have fewer.
+  const colA = await sheets.spreadsheets.values.get({
+    spreadsheetId: SID,
+    range: 'Picks!A1:A1000'
+  });
+  const numRaces = (colA.data.values || []).filter(row => row[0] && row[0].startsWith('Round ')).length;
+  if (numRaces === 0) {
+    console.log('⚠️  No race header rows found in Picks tab — sheet may not be initialized. Aborting.');
+    return;
+  }
+  console.log(`Detected ${numRaces} race blocks in Picks tab.`);
+
+  // Update dropdowns for all detected race blocks
   const requests = [];
-  for (let r = 0; r < 24; r++) {
+  for (let r = 0; r < numRaces; r++) {
     const dataStart = r * BLOCK + 2; // 0-based first player row
     const dataEnd   = dataStart + 22;
 
     // P10 and P2 picks (cols B, C = index 1, 2)
     requests.push({ setDataValidation: {
       range: { sheetId: picksId, startRowIndex: dataStart, endRowIndex: dataEnd, startColumnIndex: 1, endColumnIndex: 3 },
-      rule: { condition: { type: 'ONE_OF_LIST', values: driverValues }, showCustomUi: true, strict: false }
+      rule: { condition: { type: 'ONE_OF_LIST', values: driverValues }, showCustomUi: true, strict: true }
     }});
 
     // DNF pick (col D = index 3): drivers + NO DNF
     requests.push({ setDataValidation: {
       range: { sheetId: picksId, startRowIndex: dataStart, endRowIndex: dataEnd, startColumnIndex: 3, endColumnIndex: 4 },
-      rule: { condition: { type: 'ONE_OF_LIST', values: dnfValues }, showCustomUi: true, strict: false }
+      rule: { condition: { type: 'ONE_OF_LIST', values: dnfValues }, showCustomUi: true, strict: true }
     }});
   }
 
   await sheets.spreadsheets.batchUpdate({ spreadsheetId: SID, requestBody: { requests } });
 
-  console.log(`\n✅ Dropdowns updated with ${drivers.length} drivers across all 24 race blocks.`);
+  console.log(`\n✅ Dropdowns updated with ${drivers.length} drivers across all ${numRaces} race blocks (strict mode — free text rejected).`);
   
   // Report any changes from the previous known list
   const knownDrivers = [
