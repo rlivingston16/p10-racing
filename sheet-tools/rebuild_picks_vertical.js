@@ -270,10 +270,12 @@ async function main() {
       const resRowNum = r + 2; // Results tab row (row 2 = race 1)
       const resP2  = `Results!F${resRowNum}`;  // P2 = col F (index 5)
       const resP10Range = `Results!E${resRowNum}:Z${resRowNum}`; // P1-P22 = E:Z
-      const resDNF = `Results!AA${resRowNum}`; // First DNF moved to AA after P-cols expanded to 22
+      const resDNF  = `Results!AA${resRowNum}`; // First DNF
+      const resDNFs = `Results!AB${resRowNum}`; // hidden DNFs list (used by scoring)
+      const resDNS  = `Results!AC${resRowNum}`; // hidden DNS list (used by scoring)
 
-      // P10 score
-      const p10Score = `=IFERROR(IF(${p10Pick}="","",IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)),"")`;
+      // P10 score: 0 if pick is in DNFs/DNS list, otherwise position-based score
+      const p10Score = `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", "),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", "),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
 
       // Bonus (P2 + DNF)
       const bonus = `=IF(${p10Pick}="",0,IF(${p2Pick}=${resP2},5,0)+IF(AND(UPPER(${dnfPick})="NO DNF",${resDNF}="NO DNF"),10,IF(${dnfPick}=${resDNF},5,0)))`;

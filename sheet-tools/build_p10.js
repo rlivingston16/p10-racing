@@ -131,13 +131,16 @@ async function main() {
     const rowNum = resRow(r);
     const row = [round, name, date, ''];
 
-    // P1-P22 — filter on Col1 (Position) being numeric so DNFs / non-finishers
-    // don't backfill into low P-slots. Filtering on Col6 (the v1 approach)
-    // silently dropped the race winner because Sheets auto-formats the
-    // leader's time string ("1:33:19.273") into a duration cell.
+    // P1-P22 — show every driver in F1's table order: classified finishers
+    // first, then DNFs sorted most-laps-first, then DNS at the bottom. We do
+    // NOT filter on Col1 numeric (the v2 approach excluded DNFs but left
+    // ugly visual gaps in P-cols on races with many retirements). DNFs and
+    // DNS still score 0 because the Scores tab P10 formula checks against
+    // the AB/AC lists before looking up the position-based score.
     for (let pos = 1; pos <= 22; pos++) {
+      const tableRow = pos + 1; // F1 table row 1 is header; row 2 is P1
       row.push(
-        `=IFERROR(IF($D${rowNum}="","",IFERROR(REGEXREPLACE(INDEX(FILTER(IMPORTHTML($D${rowNum},"table",1),REGEXMATCH(TO_TEXT(INDEX(IMPORTHTML($D${rowNum},"table",1),,1)),"^[0-9]+$")),${pos},3),"[A-Z]{3}$",""),"")),"")`
+        `=IFERROR(IF($D${rowNum}="","",IFERROR(REGEXREPLACE(INDEX(IMPORTHTML($D${rowNum},"table",1),${tableRow},3),"[A-Z]{3}$",""),"")),"")`
       );
     }
 
@@ -240,9 +243,15 @@ async function main() {
       const resP2       = `Results!${RES_P2_COL}${rowNum}`;
       const resP10Range = `Results!${col(RES_P1_COL_IDX)}${rowNum}:Results!${RES_P22_COL}${rowNum}`;
       const resDNF      = `Results!${RES_DNF_COL}${rowNum}`;
+      const resDNFs     = `Results!${RES_DNFS_COL}${rowNum}`;
+      const resDNS      = `Results!${RES_DNS_COL}${rowNum}`;
 
-      // P10 score: index into SCORE_ARR by where the P10 pick finished in P1..P22.
-      const p10Score = `=IFERROR(IF(${p10Pick}="","",IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)),"")`;
+      // P10 score: 0 if the P10 pick is in the DNFs or DNS list (driver
+      // didn't finish), otherwise index into SCORE_ARR by their finishing
+      // position in P1..P22. SPLIT on the comma-separated lists so MATCH
+      // does exact-name comparison (avoids "Albon" matching both
+      // "Alex Albon" and "Alexander Albon" via substring search).
+      const p10Score = `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", "),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", "),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
 
       // Bonus: 5pts for P2 hit, 5pts for DNF hit, 10pts for correctly predicting NO DNF.
       const bonus = `=IF(${p10Pick}="",0,IF(${p2Pick}=${resP2},5,0)+IF(AND(UPPER(${dnfPick})="NO DNF",${resDNF}="NO DNF"),10,IF(${dnfPick}=${resDNF},5,0)))`;
@@ -399,6 +408,14 @@ async function main() {
     range: { sheetId: resultsSheetId, startRowIndex: 1, endRowIndex: NUM_RACES + 1, startColumnIndex: 3, endColumnIndex: 4 },
     cell: { userEnteredFormat: { backgroundColor: URL_HI, textFormat: { bold: true } }},
     fields: 'userEnteredFormat(backgroundColor,textFormat)'
+  }});
+
+  // Hide AB and AC (DNFs / DNS lists) — these are referenced by the Scores
+  // P10 formula but don't need to be visible to the user. AA (First DNF)
+  // stays visible because it's the bonus-eligible cell.
+  fmtRequests.push({ updateDimensionProperties: {
+    range: { sheetId: resultsSheetId, dimension: 'COLUMNS', startIndex: 27, endIndex: 29 },
+    properties: { hiddenByUser: true }, fields: 'hiddenByUser'
   }});
 
   // ── Scores ──
