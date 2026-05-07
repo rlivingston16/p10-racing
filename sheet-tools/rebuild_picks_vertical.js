@@ -275,7 +275,7 @@ async function main() {
       const resDNS  = `Results!AC${resRowNum}`; // hidden DNS list (used by scoring)
 
       // P10 score: 0 if pick is in DNFs/DNS list, otherwise position-based score
-      const p10Score = `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", "),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", "),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
+      const p10Score = `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", ",FALSE),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", ",FALSE),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
 
       // Bonus (P2 + DNF)
       const bonus = `=IF(${p10Pick}="",0,IF(${p2Pick}=${resP2},5,0)+IF(AND(UPPER(${dnfPick})="NO DNF",${resDNF}="NO DNF"),10,IF(${dnfPick}=${resDNF},5,0)))`;

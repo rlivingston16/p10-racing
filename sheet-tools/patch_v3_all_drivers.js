@@ -90,7 +90,7 @@ function buildScoresP10Formula(race1, player0, numRaces) {
   const resDNFs = `Results!AB${resRowNum}`;
   const resDNS = `Results!AC${resRowNum}`;
 
-  return `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", "),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", "),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
+  return `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", ",FALSE),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", ",FALSE),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
 }
 
 async function main() {

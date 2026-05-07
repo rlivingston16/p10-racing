@@ -251,7 +251,7 @@ async function main() {
       // position in P1..P22. SPLIT on the comma-separated lists so MATCH
       // does exact-name comparison (avoids "Albon" matching both
       // "Alex Albon" and "Alexander Albon" via substring search).
-      const p10Score = `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", "),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", "),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
+      const p10Score = `=IFERROR(IF(${p10Pick}="","",IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNFs},", ",FALSE),0),0)>0,0,IF(IFERROR(MATCH(${p10Pick},SPLIT(${resDNS},", ",FALSE),0),0)>0,0,IFERROR(INDEX(${SCORE_ARR},MATCH(${p10Pick},${resP10Range},0)),0)))),"")`;
 
       // Bonus: 5pts for P2 hit, 5pts for DNF hit, 10pts for correctly predicting NO DNF.
       const bonus = `=IF(${p10Pick}="",0,IF(${p2Pick}=${resP2},5,0)+IF(AND(UPPER(${dnfPick})="NO DNF",${resDNF}="NO DNF"),10,IF(${dnfPick}=${resDNF},5,0)))`;
