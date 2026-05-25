@@ -1,8 +1,18 @@
 /**
  * F1 Auto Results Updater
- * Fetches the F1 2026 race results page, extracts URLs for completed races,
- * and updates the Results tab in the P10 Racing spreadsheet.
- * Run every Monday morning to pick up weekend race results.
+ *
+ * Fetches the F1 2026 race results page, extracts URLs for every published race,
+ * and writes them into Results!D for races that have already happened.
+ *
+ * Matching is by race NAME (Results!B) — not by F1's canonical round number —
+ * because the sheet uses a sequential 1..N numbering for the abbreviated 22-race
+ * 2026 season (Bahrain + Saudi Arabia dropped). Round-number matching produced
+ * a 2-round offset for every race after Miami, leaking real results into the
+ * wrong rows. Date gating (Results!C) also clears stale URLs from rows whose
+ * race hasn't happened yet.
+ *
+ * Run after a race weekend. Idempotent: re-running does nothing for rows
+ * already in the correct state.
  */
 
 const https = require('https');
@@ -10,36 +20,38 @@ const { getSheets, SPREADSHEET_ID: SID } = require('../lib/auth');
 
 const sheets = getSheets();
 
-// Map F1 URL slugs to our race round numbers
-// Key: slug as it appears in the F1 URL, Value: round number (1-24)
-const SLUG_TO_ROUND = {
-  'australia':          1,
-  'china':              2,
-  'japan':              3,
-  'bahrain':            4,
-  'saudi-arabia':       5,
-  'miami':              6,
-  'canada':             7,
-  'monaco':             8,
-  'barcelona-catalunya': 9,  // R9 - Barcelona
-  'spain':              16,  // R16 - Madrid (F1 uses "spain" slug for both circuits)
-  'madrid':             16,  // fallback
-  'austria':            10,
-  'great-britain':      11,
-  'belgium':            12,
-  'hungary':            13,
-  'netherlands':        14,
-  'italy':              15,
-  'madrid':             16,  // Spain R16 (Madrid circuit)
-  'azerbaijan':         17,
-  'singapore':          18,
-  'united-states':      19,
-  'mexico':             20,
-  'brazil':             21,
-  'las-vegas':          22,
-  'qatar':              23,
-  'abu-dhabi':          24,
+// Map F1's URL slug → the race name as it appears in Results!B (exact, case-sensitive).
+// Bahrain + Saudi Arabia are kept here so the mapping survives a future re-add,
+// even though they're absent from the current sheet.
+const SLUG_TO_NAME = {
+  'australia':           'Australia',
+  'china':               'China',
+  'japan':               'Japan',
+  'bahrain':             'Bahrain',
+  'saudi-arabia':        'Saudi Arabia',
+  'miami':               'Miami',
+  'canada':              'Canada',
+  'monaco':              'Monaco',
+  'barcelona-catalunya': 'Spain (Barcelona)',
+  'spain':               'Spain (Madrid)',
+  'madrid':              'Spain (Madrid)',
+  'austria':             'Austria',
+  'great-britain':       'Great Britain',
+  'belgium':             'Belgium',
+  'hungary':             'Hungary',
+  'netherlands':         'Netherlands',
+  'italy':               'Italy',
+  'azerbaijan':          'Azerbaijan',
+  'singapore':           'Singapore',
+  'united-states':       'USA',
+  'mexico':              'Mexico',
+  'brazil':              'Brazil',
+  'las-vegas':           'Las Vegas',
+  'qatar':               'Qatar',
+  'abu-dhabi':           'Abu Dhabi',
 };
+
+const SEASON_YEAR = 2026;
 
 function fetchPage(url) {
   return new Promise((resolve, reject) => {
@@ -50,7 +62,6 @@ function fetchPage(url) {
       }
     };
     https.get(url, opts, (res) => {
-      // Handle redirects
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return fetchPage(res.headers.location).then(resolve).catch(reject);
       }
@@ -61,61 +72,94 @@ function fetchPage(url) {
   });
 }
 
+// Sheet stores dates as "M/D" (e.g. "5/24"). Year is implicit from the season.
+function parseRaceDate(s) {
+  if (!s) return null;
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (!m) return null;
+  return new Date(SEASON_YEAR, parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+}
+
 async function main() {
   console.log('🏎️  F1 Auto Results Updater');
-  console.log('Fetching F1 2026 race results page...');
+  console.log(`Fetching F1 ${SEASON_YEAR} race results page...`);
 
-  const html = await fetchPage('https://www.formula1.com/en/results/2026/races');
+  const html = await fetchPage(`https://www.formula1.com/en/results/${SEASON_YEAR}/races`);
 
-  // Extract all race result links matching the pattern
-  const linkRegex = /href="(\/en\/results\/2026\/races\/(\d+)\/([^/]+)\/race-result)"/g;
-  const found = {};
+  const linkRegex = new RegExp(
+    `href="(\\/en\\/results\\/${SEASON_YEAR}\\/races\\/(\\d+)\\/([^/]+)\\/race-result)"`,
+    'g'
+  );
+  const found = {};  // race name → URL
   let match;
 
   while ((match = linkRegex.exec(html)) !== null) {
-    const [, path, id, slug] = match;
+    const [, path, , slug] = match;
     const fullUrl = `https://www.formula1.com${path}`;
-    const round = SLUG_TO_ROUND[slug];
+    const name = SLUG_TO_NAME[slug];
 
-    if (round) {
-      found[round] = { url: fullUrl, slug, id };
-      console.log(`  ✅ Round ${round} (${slug}): ${fullUrl}`);
+    if (name) {
+      if (!found[name]) {
+        found[name] = fullUrl;
+        console.log(`  ✅ ${name} (${slug}): ${fullUrl}`);
+      }
     } else {
-      console.log(`  ⚠️  Unknown slug: ${slug} (id: ${id}) — skipping`);
+      console.log(`  ⚠️  Unknown slug: ${slug} — skipping`);
     }
   }
 
   if (Object.keys(found).length === 0) {
-    console.log('No race results found yet — season may not have started or page structure changed.');
+    console.log('No race URLs found — season may not have started or page structure changed.');
     return;
   }
 
-  // Read current Results tab to see which URLs are already filled
+  // Read Results A:D so we can match by name (col B) and check date (col C).
   const current = await sheets.spreadsheets.values.get({
     spreadsheetId: SID,
-    range: 'Results!A2:D25'  // Rows 2-25, cols A-D (round, name, date, url)
+    range: 'Results!A2:D30',
   });
 
   const rows = current.data.values || [];
   const updates = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  for (const row of rows) {
-    const round = parseInt(row[0]);
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const name = (row[1] || '').trim();
+    const dateStr = (row[2] || '').trim();
     const currentUrl = row[3] || '';
+    const sheetRow = i + 2;  // A2 starts at row 2
 
-    if (found[round]) {
-      const sheetRow = round + 1;
-      if (currentUrl !== found[round].url) {
-        updates.push({ range: `Results!D${sheetRow}`, values: [[found[round].url]] });
-        console.log(`  📝 Updating Round ${round} URL`);
-      } else {
-        console.log(`  ⏭️  Round ${round} already up to date`);
+    if (!name) continue;
+
+    const raceDate = parseRaceDate(dateStr);
+    const isFuture = !raceDate || raceDate > today;
+
+    if (isFuture) {
+      if (currentUrl) {
+        updates.push({ range: `Results!D${sheetRow}`, values: [['']] });
+        console.log(`  🧹 Clearing stale URL for upcoming race: ${name} (${dateStr || 'no date'})`);
       }
+      continue;
+    }
+
+    const targetUrl = found[name];
+    if (!targetUrl) {
+      console.log(`  ⚠️  ${name} — race date has passed but no URL published yet`);
+      continue;
+    }
+
+    if (currentUrl !== targetUrl) {
+      updates.push({ range: `Results!D${sheetRow}`, values: [[targetUrl]] });
+      console.log(`  📝 Updating ${name} URL`);
+    } else {
+      console.log(`  ⏭️  ${name} already up to date`);
     }
   }
 
   if (updates.length === 0) {
-    console.log('No new URLs to update.');
+    console.log('\n✅ Nothing to update — sheet is already in sync.');
     return;
   }
 
@@ -123,11 +167,11 @@ async function main() {
     spreadsheetId: SID,
     requestBody: {
       valueInputOption: 'RAW',
-      data: updates
+      data: updates,
     }
   });
 
-  console.log(`\n✅ Done! Updated ${updates.length} race URL(s) in the Results tab.`);
+  console.log(`\n✅ Done! Applied ${updates.length} cell update(s) in the Results tab.`);
   console.log('Scores and Leaderboard will auto-calculate from the new data.');
 }
 
