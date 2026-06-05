@@ -173,5 +173,11 @@ app.post('/api/picks', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`P10 app running on port ${PORT}`));
+// Only start a long-running listener when run directly (local dev / Render-style).
+// On Vercel the app is imported as a serverless handler, so we export it instead.
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`P10 app running on port ${PORT}`));
+}
+
+module.exports = app;
