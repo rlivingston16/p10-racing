@@ -279,12 +279,15 @@ async function insertScoresTriplet(sheets, tabId, insertCol1, sprint, racePositi
     data.push({ range: `Scores!${bonusCol}${R}`, values: [[bonusFormula]] });
     data.push({ range: `Scores!${winCol}${R}`, values: [[winFormula]] });
   }
+  // Row-3 sub-headers (PASTE_FORMAT only carries formatting, not the text — write them explicitly).
+  data.push({ range: `Scores!${ptsCol}3:${winCol}3`, values: [['P10 Pts', 'Bonus', 'Win $']] });
+
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SHEET_ID,
     requestBody: { valueInputOption: 'USER_ENTERED', data },
   });
 
-  console.log(`    Scores: inserted 3 cols at ${colLetter1(insertCol1)} for ${sprint.name}; wrote 66 fresh formulas`);
+  console.log(`    Scores: inserted 3 cols at ${colLetter1(insertCol1)} for ${sprint.name}; wrote 66 formulas + row-3 sub-headers`);
 }
 
 // ----- end-of-migration cleanup -----
