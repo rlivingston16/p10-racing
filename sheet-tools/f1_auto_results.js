@@ -86,18 +86,23 @@ async function main() {
 
   const html = await fetchPage(`https://www.formula1.com/en/results/${SEASON_YEAR}/races`);
 
-  const linkRegex = new RegExp(
+  const raceRegex = new RegExp(
     `href="(\\/en\\/results\\/${SEASON_YEAR}\\/races\\/(\\d+)\\/([^/]+)\\/race-result)"`,
     'g'
   );
-  const found = {};  // race name → URL
+  const sprintRegex = new RegExp(
+    `href="(\\/en\\/results\\/${SEASON_YEAR}\\/races\\/(\\d+)\\/([^/]+)\\/sprint-result)"`,
+    'g'
+  );
+
+  const found = {};  // race name → URL  (sprints get the "(Sprint)" suffix to match Results!B)
   let match;
 
-  while ((match = linkRegex.exec(html)) !== null) {
+  // Main-race result URLs
+  while ((match = raceRegex.exec(html)) !== null) {
     const [, path, , slug] = match;
     const fullUrl = `https://www.formula1.com${path}`;
     const name = SLUG_TO_NAME[slug];
-
     if (name) {
       if (!found[name]) {
         found[name] = fullUrl;
@@ -105,6 +110,21 @@ async function main() {
       }
     } else {
       console.log(`  ⚠️  Unknown slug: ${slug} — skipping`);
+    }
+  }
+
+  // Sprint result URLs (same id/slug as main race, but /sprint-result instead of /race-result).
+  // F1.com publishes them on the same season page. They land in our Results!B rows as
+  // "{race name} (Sprint)" — see add_sprint_races migration for the (Sprint) suffix convention.
+  while ((match = sprintRegex.exec(html)) !== null) {
+    const [, path, , slug] = match;
+    const fullUrl = `https://www.formula1.com${path}`;
+    const baseName = SLUG_TO_NAME[slug];
+    if (!baseName) continue;
+    const sprintName = `${baseName} (Sprint)`;
+    if (!found[sprintName]) {
+      found[sprintName] = fullUrl;
+      console.log(`  ✅ ${sprintName} (${slug} sprint): ${fullUrl}`);
     }
   }
 
