@@ -172,6 +172,9 @@ async function insertPicksBlock(sheets, tabId, insertRow, sprint) {
         },
         {
           // Wipe the cloned player picks (cols B:D for the 22 player rows at top of the block).
+          // Use empty cell objects (not stringValue:"") so the field is genuinely cleared.
+          // Writing "" was a real value that failed the strict ONE_OF_LIST validation,
+          // which made Sheets render an "invalid value" marker instead of the dropdown chip.
           updateCells: {
             range: {
               sheetId: tabId.Picks,
@@ -181,11 +184,7 @@ async function insertPicksBlock(sheets, tabId, insertRow, sprint) {
               endColumnIndex: 4,   // D exclusive
             },
             rows: Array.from({ length: PLAYERS_PER_BLOCK }, () => ({
-              values: [
-                { userEnteredValue: { stringValue: '' } },
-                { userEnteredValue: { stringValue: '' } },
-                { userEnteredValue: { stringValue: '' } },
-              ],
+              values: [{}, {}, {}],
             })),
             fields: 'userEnteredValue',
           },
