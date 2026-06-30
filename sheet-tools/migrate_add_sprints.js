@@ -342,6 +342,89 @@ async function updateScoresLabels(sheets) {
   console.log(`  Updated ${races.length} race labels in Scores!row 2 (${gpCounter} GPs prefixed, ${races.length - gpCounter} sprints plain)`);
 }
 
+/** Extend the Picks-tab protected range's `unprotectedRanges` to include the new
+ *  sprint pick blocks. Without this, "anyone with link can edit" users see locked
+ *  cells with no dropdown UI — even though the data validation is set, the cell
+ *  isn't editable for them so Sheets hides the dropdown chip entirely.
+ *
+ *  The Picks tab has a sheet-wide protected range with carve-outs for each race's
+ *  22-row × cols B-D pick area. Inserting rows auto-shifts existing carve-outs,
+ *  but doesn't create new ones for newly-inserted blocks — we have to add them. */
+async function extendPicksProtection(sheets, tabId) {
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId: SHEET_ID,
+    fields: 'sheets(properties.title,protectedRanges)',
+  });
+  const picks = meta.data.sheets.find((s) => s.properties.title === 'Picks');
+  if (!picks || !picks.protectedRanges || !picks.protectedRanges.length) {
+    console.log('  (no protected range on Picks tab — skipping carve-out extension)');
+    return;
+  }
+
+  // Find the sheet-wide protection (the one with carve-outs).
+  const pr = picks.protectedRanges.find((p) => p.unprotectedRanges && p.unprotectedRanges.length);
+  if (!pr) {
+    console.log('  (no sheet-wide Picks protection with carve-outs — skipping)');
+    return;
+  }
+
+  const existing = pr.unprotectedRanges || [];
+
+  // Read the current race order from Results so we know which rows are sprint blocks.
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: 'Results!A2:B40',
+  });
+  const races = (res.data.values || []).filter((r) => (r[1] || '').trim()).map((r) => (r[1] || '').trim());
+
+  // For each sprint, compute its Picks block rows (0-indexed for the API).
+  const desired = [];
+  for (let i = 0; i < races.length; i++) {
+    if (!isSprint(races[i])) continue;
+    const startRow0 = 3 + 25 * i - 1; // 0-indexed sheet row of first player in this race
+    const endRow0 = startRow0 + PLAYERS_PER_BLOCK; // exclusive
+    desired.push({
+      sheetId: tabId.Picks,
+      startRowIndex: startRow0,
+      endRowIndex: endRow0,
+      startColumnIndex: 1, // B
+      endColumnIndex: 4,   // D exclusive
+      name: races[i],
+    });
+  }
+
+  // Filter out any that already have a matching carve-out.
+  const toAdd = desired.filter((d) =>
+    !existing.some((e) => e.startRowIndex === d.startRowIndex && e.endRowIndex === d.endRowIndex)
+  );
+
+  if (toAdd.length === 0) {
+    console.log('  Carve-outs for all sprints already exist — no change');
+    return;
+  }
+
+  const updated = [
+    ...existing,
+    ...toAdd.map(({ name, ...range }) => range),
+  ];
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SHEET_ID,
+    requestBody: {
+      requests: [{
+        updateProtectedRange: {
+          protectedRange: {
+            protectedRangeId: pr.protectedRangeId,
+            unprotectedRanges: updated,
+          },
+          fields: 'unprotectedRanges',
+        },
+      }],
+    },
+  });
+  console.log(`  Extended Picks protection with ${toAdd.length} carve-out(s): ${toAdd.map((d) => d.name).join(', ')}`);
+}
+
 /** Re-stamp the per-race headers in the Picks tab. The Picks tab uses a
  *  "tail header" layout: race N's header is at row 25*(N-1)+1, col-headers at
  *  row 25*(N-1)+2, and players at rows (3 + 25*(N-1)) through +21. When we
@@ -511,6 +594,7 @@ async function main() {
   await renumberResultsColumn(sheets);
   await updateScoresLabels(sheets);
   await restampPicksHeaders(sheets);
+  await extendPicksProtection(sheets, tabId);
   await rewriteSeasonTotals(sheets);
 
   console.log('\n✅ Migration complete!');
