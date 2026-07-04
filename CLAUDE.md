@@ -37,7 +37,7 @@ The Google Sheet IS the database. This repo is (a) the player-facing website at 
   - Race name in `Results!B` uses the `(Sprint)` suffix, e.g., `Great Britain (Sprint)`.
   - Picks-tab race header is plain `{Race Name} — Race Day: {date}` for sprints (no `Round N` prefix). GP race headers keep `Round N — {Name} — Race Day: {date}`.
   - Scores-tab row-2 label is plain `{Race Name}` for sprints (no `Rn -` prefix).
-  - Sprint URLs use F1's `/sprint-result` path (vs `/race-result` for main races). Same `{id}/{slug}` as the main race weekend. `f1_auto_results.js` handles both URL patterns and matches by race name.
+  - Sprint URLs use F1's `/sprint-results` path — **plural**, unlike the singular `/race-result` for main races. Same `{id}/{slug}` as the main race weekend. F1 does NOT link sprint pages from the season index; `f1_auto_results.js` derives them from the main-race URL and probes before writing. (Sprint qualifying = `/sprint-qualifying`.)
 
 ## Conventions
 
