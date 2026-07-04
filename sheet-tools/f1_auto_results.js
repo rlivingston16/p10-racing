@@ -90,8 +90,10 @@ async function main() {
     `href="(\\/en\\/results\\/${SEASON_YEAR}\\/races\\/(\\d+)\\/([^/]+)\\/race-result)"`,
     'g'
   );
+  // Note: F1 uses "/race-result" (singular) for main races but "/sprint-results" (plural)
+  // for sprints. Yes, this is inconsistent naming on their end.
   const sprintRegex = new RegExp(
-    `href="(\\/en\\/results\\/${SEASON_YEAR}\\/races\\/(\\d+)\\/([^/]+)\\/sprint-result)"`,
+    `href="(\\/en\\/results\\/${SEASON_YEAR}\\/races\\/(\\d+)\\/([^/]+)\\/sprint-results)"`,
     'g'
   );
 
@@ -113,9 +115,12 @@ async function main() {
     }
   }
 
-  // Sprint result URLs (same id/slug as main race, but /sprint-result instead of /race-result).
-  // F1.com publishes them on the same season page. They land in our Results!B rows as
-  // "{race name} (Sprint)" — see add_sprint_races migration for the (Sprint) suffix convention.
+  // Sprint result URLs. Two paths:
+  // (a) index links matching /sprint-results — rarely present, F1 doesn't reliably
+  //     link sprint pages from the season index;
+  // (b) derived from the main race URL by swapping /race-result → /sprint-results
+  //     (same {id}/{slug}). Derived URLs are verified with a live probe before use,
+  //     since constructing a URL doesn't guarantee F1 has published the page.
   while ((match = sprintRegex.exec(html)) !== null) {
     const [, path, , slug] = match;
     const fullUrl = `https://www.formula1.com${path}`;
@@ -126,6 +131,15 @@ async function main() {
       found[sprintName] = fullUrl;
       console.log(`  ✅ ${sprintName} (${slug} sprint): ${fullUrl}`);
     }
+  }
+
+  // (b) derive sprint URLs for any main race we found.
+  for (const [name, url] of Object.entries({ ...found })) {
+    if (name.endsWith('(Sprint)')) continue;
+    const sprintName = `${name} (Sprint)`;
+    if (found[sprintName]) continue;
+    const derived = url.replace(/\/race-result$/, '/sprint-results');
+    if (derived !== url) found[sprintName] = derived;  // probe before writing, below
   }
 
   if (Object.keys(found).length === 0) {
@@ -171,6 +185,16 @@ async function main() {
     }
 
     if (currentUrl !== targetUrl) {
+      // Derived sprint URLs aren't listed on F1's index — probe before writing so we
+      // never point IMPORTHTML at a 404 (or a not-yet-published page).
+      if (name.endsWith('(Sprint)')) {
+        const page = await fetchPage(targetUrl);
+        const hasTable = page.length > 5000 && /<td/i.test(page);
+        if (!hasTable) {
+          console.log(`  ⚠️  ${name} — derived URL not live yet (${targetUrl})`);
+          continue;
+        }
+      }
       updates.push({ range: `Results!D${sheetRow}`, values: [[targetUrl]] });
       console.log(`  📝 Updating ${name} URL`);
     } else {
