@@ -1357,12 +1357,15 @@ async function init() {
   const dnfS = document.getElementById('dnfSelect');
   raceData.dnfDrivers.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; dnfS.appendChild(o); });
 
-  // Race info
+  // Race info — display the GP round number from col A (blank = sprint round), not the sheet-row index
   const race = raceData.races[currentRound - 1];
   if (race) {
-    document.getElementById('raceInfo').innerHTML = `<div class="race-badge"><span class="live" aria-hidden="true"></span>Round ${currentRound} &middot; ${race[1]} &middot; ${race[2]}</div>`;
+    const gpNum = (race[0] || '').toString().trim();
+    const rTag = gpNum ? `R${gpNum}` : 'SPRINT';
+    const rBadge = gpNum ? `Round ${gpNum}` : 'Sprint';
+    document.getElementById('raceInfo').innerHTML = `<div class="race-badge"><span class="live" aria-hidden="true"></span>${rBadge} &middot; ${race[1]} &middot; ${race[2]}</div>`;
     const roundLbl = document.querySelector('.round-lbl');
-    if (roundLbl) roundLbl.innerHTML = `<span class="rd">R${currentRound}</span> &middot; ${race[1]}`;
+    if (roundLbl) roundLbl.innerHTML = `<span class="rd">${rTag}</span> &middot; ${race[1]}`;
   }
 
   document.getElementById('picksLoading').style.display = 'none';
