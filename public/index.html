@@ -1496,7 +1496,7 @@ async function loadScores() {
   });
   html += '</tr><tr class="subhead"><th class="sticky-col corner sub" scope="col"><span class="sr-only">Player</span></th>';
   completedRounds.forEach(() => {
-    html += '<th scope="col">P10</th><th class="hide-mobile" scope="col">Bon</th><th class="hide-mobile" scope="col">Win</th>';
+    html += '<th scope="col">P10</th><th scope="col">Bon</th><th scope="col">Win</th>';
   });
   html += '</tr></thead><tbody>';
 
@@ -1513,8 +1513,8 @@ async function loadScores() {
       const bonus = (bonusRaw && String(bonusRaw) !== '0') ? bonusRaw : '';
       const win = row[rd.colStart + 2];
       html += `<td class="${ptsCls}"${ptsTitle}>${ptsVal}</td>`
-        + `<td class="hide-mobile bonus-cell">${bonus}</td>`
-        + `<td class="hide-mobile win-cell">${win === '$10' ? '<span class="badge">$10</span>' : ''}</td>`;
+        + `<td class="bonus-cell">${bonus}</td>`
+        + `<td class="win-cell">${win === '$10' ? '<span class="badge">$10</span>' : ''}</td>`;
     });
     html += '</tr>';
   });
