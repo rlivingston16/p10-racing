@@ -54,7 +54,7 @@ const DRIVERS = [
   'Fernando Alonso','Franco Colapinto','Gabriel Bortoleto','George Russell','Isack Hadjar',
   'Kimi Antonelli','Lance Stroll','Lando Norris','Lewis Hamilton','Liam Lawson',
   'Max Verstappen','Nico Hulkenberg','Oliver Bearman','Oscar Piastri','Pierre Gasly',
-  'Sergio Perez','Valtteri Bottas'
+  'Sergio Perez','Valtteri Bottas','Yuki Tsunoda'
 ];
 
 const DNF_DRIVERS = ['NO DNF', ...DRIVERS];
